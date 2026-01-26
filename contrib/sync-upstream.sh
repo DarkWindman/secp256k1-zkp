@@ -110,7 +110,7 @@ TITLE="Upstream PRs"
 BODY=""
 for COMMIT in $COMMITS
 do
-    PRNUM=$(git log -1 "$COMMIT" --pretty=format:%s | sed s/'Merge \(bitcoin-core\/secp256k1\)\?#\([0-9]*\).*'/'\2'/)
+    PRNUM=$(git log -1 "$COMMIT" --pretty=format:%s | grep -oE '#[0-9]+' | head -1 | tr -d '#')
     TITLE="$TITLE $PRNUM,"
     BODY=$(printf "%s\n%s" "$BODY" "$(git log -1 "$COMMIT" --pretty=format:%s | sed s/'Merge \(bitcoin-core\/secp256k1\)\?#\([0-9]*\)'/'[bitcoin-core\/secp256k1#\2]'/)")
 done
