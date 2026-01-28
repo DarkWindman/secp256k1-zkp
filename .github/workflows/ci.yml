@@ -557,12 +557,19 @@ jobs:
         configuration:
           - env_vars:
               CTIMETESTS: 'yes'
+              CTIMETESTS: 'yes'
               CFLAGS: '-fsanitize=memory -fsanitize-recover=memory -g'
           - env_vars:
               ECMULTGENKB: 2
               ECMULTWINDOW: 2
               CTIMETESTS: 'yes'
+              CTIMETESTS: 'yes'
               CFLAGS: '-fsanitize=memory -fsanitize-recover=memory -g -O3'
+          - env_vars:
+              # -fsanitize-memory-param-retval is clang's default, but our build system disables it
+              # when ctime_tests when enabled.
+              CFLAGS: '-fsanitize=memory -fsanitize-recover=memory -fsanitize-memory-param-retval -g'
+              CTIMETESTS: 'no'
           - env_vars:
               # -fsanitize-memory-param-retval is clang's default, but our build system disables it
               # when ctime_tests when enabled.
