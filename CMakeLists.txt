@@ -11,7 +11,7 @@ project(libsecp256k1
   # The package (a.k.a. release) version is based on semantic versioning 2.0.0 of
   # the API. All changes in experimental modules are treated as
   # backwards-compatible and therefore at most increase the minor version.
-  VERSION 0.4.2
+  VERSION 0.5.1
   DESCRIPTION "Optimized C library for ECDSA signatures and secret/public key operations on curve secp256k1."
   HOMEPAGE_URL "https://github.com/bitcoin-core/secp256k1"
   LANGUAGES C
@@ -34,9 +34,9 @@ endif()
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # All changes in experimental modules are treated as if they don't affect the
 # interface and therefore only increase the revision.
-set(${PROJECT_NAME}_LIB_VERSION_CURRENT 3)
-set(${PROJECT_NAME}_LIB_VERSION_REVISION 2)
-set(${PROJECT_NAME}_LIB_VERSION_AGE 1)
+set(${PROJECT_NAME}_LIB_VERSION_CURRENT 4)
+set(${PROJECT_NAME}_LIB_VERSION_REVISION 1)
+set(${PROJECT_NAME}_LIB_VERSION_AGE 2)
 
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -163,13 +163,22 @@ if(SECP256K1_ECMULT_WINDOW_SIZE STREQUAL "AUTO")
 endif()
 add_compile_definitions(ECMULT_WINDOW_SIZE=${SECP256K1_ECMULT_WINDOW_SIZE})
 
-set(SECP256K1_ECMULT_GEN_PREC_BITS "AUTO" CACHE STRING "Precision bits to tune the precomputed table size for signing, specified as integer 2, 4 or 8. \"AUTO\" is a reasonable setting for desktop machines (currently 4). [default=AUTO]")
-set_property(CACHE SECP256K1_ECMULT_GEN_PREC_BITS PROPERTY STRINGS "AUTO" 2 4 8)
-check_string_option_value(SECP256K1_ECMULT_GEN_PREC_BITS)
-if(SECP256K1_ECMULT_GEN_PREC_BITS STREQUAL "AUTO")
-  set(SECP256K1_ECMULT_GEN_PREC_BITS 4)
+set(SECP256K1_ECMULT_GEN_KB "AUTO" CACHE STRING "The size of the precomputed table for signing in multiples of 1024 bytes (on typical platforms). Larger values result in possibly better signing or key generation performance at the cost of a larger table. Valid choices are 2, 22, 86. \"AUTO\" is a reasonable setting for desktop machines (currently 22). [default=AUTO]")
+set_property(CACHE SECP256K1_ECMULT_GEN_KB PROPERTY STRINGS "AUTO" 2 22 86)
+check_string_option_value(SECP256K1_ECMULT_GEN_KB)
+if(SECP256K1_ECMULT_GEN_KB STREQUAL "AUTO")
+  set(SECP256K1_ECMULT_GEN_KB 22)
 endif()
-add_compile_definitions(ECMULT_GEN_PREC_BITS=${SECP256K1_ECMULT_GEN_PREC_BITS})
+if(SECP256K1_ECMULT_GEN_KB EQUAL 2)
+  add_compile_definitions(COMB_BLOCKS=2)
+  add_compile_definitions(COMB_TEETH=5)
+elseif(SECP256K1_ECMULT_GEN_KB EQUAL 22)
+  add_compile_definitions(COMB_BLOCKS=11)
+  add_compile_definitions(COMB_TEETH=6)
+elseif(SECP256K1_ECMULT_GEN_KB EQUAL 86)
+  add_compile_definitions(COMB_BLOCKS=43)
+  add_compile_definitions(COMB_TEETH=6)
+endif()
 
 set(SECP256K1_TEST_OVERRIDE_WIDE_MULTIPLY "OFF" CACHE STRING "Test-only override of the (autodetected by the C code) \"widemul\" setting. Legal values are: \"OFF\", \"int128_struct\", \"int128\" or \"int64\". [default=OFF]")
 set_property(CACHE SECP256K1_TEST_OVERRIDE_WIDE_MULTIPLY PROPERTY STRINGS "OFF" "int128_struct" "int128" "int64")
@@ -316,6 +325,17 @@ endif()
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 
+set(print_msan_notice)
+if(SECP256K1_BUILD_CTIME_TESTS)
+  include(CheckMemorySanitizer)
+  check_memory_sanitizer(msan_enabled)
+  if(msan_enabled)
+    try_append_c_flags(-fno-sanitize-memory-param-retval)
+    set(print_msan_notice YES)
+  endif()
+  unset(msan_enabled)
+endif()
+
 # Ask CTest to create a "check" target (e.g., make check) as alias for the "test" target.
 # CTEST_TEST_TARGET_ALIAS is not documented but supposed to be user-facing.
 # See: https://gitlab.kitware.com/cmake/cmake/-/commit/816c9d1aa1f2b42d40c81a991b68c96eb12b6d2
@@ -364,7 +384,7 @@ message("  ecdsa-adaptor ....................... ${SECP256K1_ENABLE_MODULE_ECDSA
 message("  bppp ................................ ${SECP256K1_ENABLE_MODULE_BPPP}")
 message("Parameters:")
 message("  ecmult window size .................. ${SECP256K1_ECMULT_WINDOW_SIZE}")
-message("  ecmult gen precision bits ........... ${SECP256K1_ECMULT_GEN_PREC_BITS}")
+message("  ecmult gen table size ............... ${SECP256K1_ECMULT_GEN_KB} KiB")
 message("Optional features:")
 message("  assembly ............................ ${SECP256K1_ASM}")
 message("  external callbacks .................. ${SECP256K1_USE_EXTERNAL_DEFAULT_CALLBACKS}")
@@ -393,7 +413,7 @@ message("Valgrind .............................. ${SECP256K1_VALGRIND}")
 get_directory_property(definitions COMPILE_DEFINITIONS)
 string(REPLACE ";" " " definitions "${definitions}")
 message("Preprocessor defined macros ........... ${definitions}")
-message("C compiler ............................ ${CMAKE_C_COMPILER}")
+message("C compiler ............................ ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}, ${CMAKE_C_COMPILER}")
 message("CFLAGS ................................ ${CMAKE_C_FLAGS}")
 get_directory_property(compile_options COMPILE_OPTIONS)
 string(REPLACE ";" " " compile_options "${compile_options}")
@@ -419,7 +439,14 @@ endif()
 if(SECP256K1_LATE_CFLAGS)
   message("SECP256K1_LATE_CFLAGS ................. ${SECP256K1_LATE_CFLAGS}")
 endif()
-message("\n")
+message("")
+if(print_msan_notice)
+  message(
+    "Note:\n"
+    "  MemorySanitizer detected, tried to add -fno-sanitize-memory-param-retval to compile options\n"
+    "  to avoid false positives in ctime_tests. Pass -DSECP256K1_BUILD_CTIME_TESTS=OFF to avoid this.\n"
+  )
+endif()
 if(SECP256K1_EXPERIMENTAL)
   message(
     "  ******\n"

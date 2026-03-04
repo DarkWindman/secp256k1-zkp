@@ -12,9 +12,14 @@ print_environment() {
     # There are many ways to print variable names and their content. This one
     # does not rely on bash.
     for var in WERROR_CFLAGS MAKEFLAGS BUILD \
+<<<<<<< HEAD
             ECMULTWINDOW ECMULTGENPRECISION ASM WIDEMUL WITH_VALGRIND EXTRAFLAGS \
             EXPERIMENTAL ECDH RECOVERY SCHNORRSIG SCHNORRSIG_HALFAGG ELLSWIFT \
             ECDSA_S2C GENERATOR RANGEPROOF WHITELIST MUSIG ECDSAADAPTOR BPPP \
+=======
+            ECMULTWINDOW ECMULTGENKB ASM WIDEMUL WITH_VALGRIND EXTRAFLAGS \
+            EXPERIMENTAL ECDH RECOVERY SCHNORRSIG ELLSWIFT \
+>>>>>>> 4392f0f7
             SECP256K1_TEST_ITERS BENCH SECP256K1_BENCH_ITERS CTIMETESTS\
             EXAMPLES \
             HOST WRAPPER_CMD \
@@ -75,7 +80,7 @@ esac
     --enable-experimental="$EXPERIMENTAL" \
     --with-test-override-wide-multiply="$WIDEMUL" --with-asm="$ASM" \
     --with-ecmult-window="$ECMULTWINDOW" \
-    --with-ecmult-gen-precision="$ECMULTGENPRECISION" \
+    --with-ecmult-gen-kb="$ECMULTGENKB" \
     --enable-module-ecdh="$ECDH" --enable-module-recovery="$RECOVERY" \
     --enable-module-ellswift="$ELLSWIFT" \
     --enable-module-ecdsa-s2c="$ECDSA_S2C" \
