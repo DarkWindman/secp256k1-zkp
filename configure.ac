@@ -4,8 +4,13 @@ AC_PREREQ([2.60])
 # the API. All changes in experimental modules are treated as
 # backwards-compatible and therefore at most increase the minor version.
 define(_PKG_VERSION_MAJOR, 0)
+<<<<<<< HEAD
 define(_PKG_VERSION_MINOR, 1)
 define(_PKG_VERSION_PATCH, 0)
+=======
+define(_PKG_VERSION_MINOR, 5)
+define(_PKG_VERSION_PATCH, 1)
+>>>>>>> 4392f0f7
 define(_PKG_VERSION_IS_RELEASE, false)
 
 # The library version is based on libtool versioning of the ABI. The set of
@@ -13,9 +18,15 @@ define(_PKG_VERSION_IS_RELEASE, false)
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # All changes in experimental modules are treated as if they don't affect the
 # interface and therefore only increase the revision.
+<<<<<<< HEAD
 define(_LIB_VERSION_CURRENT, 0)
 define(_LIB_VERSION_REVISION, 0)
 define(_LIB_VERSION_AGE, 0)
+=======
+define(_LIB_VERSION_CURRENT, 4)
+define(_LIB_VERSION_REVISION, 1)
+define(_LIB_VERSION_AGE, 2)
+>>>>>>> 4392f0f7
 
 AC_INIT([libsecp256k1],m4_join([.], _PKG_VERSION_MAJOR, _PKG_VERSION_MINOR, _PKG_VERSION_PATCH)m4_if(_PKG_VERSION_IS_RELEASE, [true], [], [-dev]),[https://github.com/bitcoin-core/secp256k1/issues],[libsecp256k1],[https://github.com/bitcoin-core/secp256k1])
 
@@ -261,13 +272,12 @@ AC_ARG_WITH([ecmult-window], [AS_HELP_STRING([--with-ecmult-window=SIZE|auto],
 )],
 [req_ecmult_window=$withval], [req_ecmult_window=auto])
 
-AC_ARG_WITH([ecmult-gen-precision], [AS_HELP_STRING([--with-ecmult-gen-precision=2|4|8|auto],
-[Precision bits to tune the precomputed table size for signing.]
-[The size of the table is 32kB for 2 bits, 64kB for 4 bits, 512kB for 8 bits of precision.]
-[A larger table size usually results in possible faster signing.]
-["auto" is a reasonable setting for desktop machines (currently 4). [default=auto]]
+AC_ARG_WITH([ecmult-gen-kb], [AS_HELP_STRING([--with-ecmult-gen-kb=2|22|86|auto],
+[The size of the precomputed table for signing in multiples of 1024 bytes (on typical platforms).]
+[Larger values result in possibly better signing/keygeneration performance at the cost of a larger table.]
+["auto" is a reasonable setting for desktop machines (currently 22). [default=auto]]
 )],
-[req_ecmult_gen_precision=$withval], [req_ecmult_gen_precision=auto])
+[req_ecmult_gen_kb=$withval], [req_ecmult_gen_kb=auto])
 
 AC_ARG_WITH([valgrind], [AS_HELP_STRING([--with-valgrind=yes|no|auto],
 [Build with extra checks for running inside Valgrind [default=auto]]
@@ -297,7 +307,11 @@ if test x"$enable_ctime_tests" = x"auto"; then
 fi
 
 print_msan_notice=no
+<<<<<<< HEAD
 if test x"$enable_ctime_tests" = x"yes" && test x"$GCC" = x"yes"; then
+=======
+if test x"$enable_ctime_tests" = x"yes"; then
+>>>>>>> 4392f0f7
   SECP_MSAN_CHECK
   # MSan on Clang >=16 reports unitialized memory in function parameters and return values, even if
   # the uninitalized variable is never actually "used". This is called "eager" checking, and it's
@@ -432,19 +446,25 @@ case $set_ecmult_window in
   ;;
 esac
 
-# Set ecmult gen precision
-if test x"$req_ecmult_gen_precision" = x"auto"; then
-  set_ecmult_gen_precision=4
+# Set ecmult gen kb
+if test x"$req_ecmult_gen_kb" = x"auto"; then
+  set_ecmult_gen_kb=22
 else
-  set_ecmult_gen_precision=$req_ecmult_gen_precision
+  set_ecmult_gen_kb=$req_ecmult_gen_kb
 fi
 
-case $set_ecmult_gen_precision in
-2|4|8)
-  SECP_CONFIG_DEFINES="$SECP_CONFIG_DEFINES -DECMULT_GEN_PREC_BITS=$set_ecmult_gen_precision"
+case $set_ecmult_gen_kb in
+2)
+  SECP_CONFIG_DEFINES="$SECP_CONFIG_DEFINES -DCOMB_BLOCKS=2 -DCOMB_TEETH=5"
+  ;;
+22)
+  SECP_CONFIG_DEFINES="$SECP_CONFIG_DEFINES -DCOMB_BLOCKS=11 -DCOMB_TEETH=6"
+  ;;
+86)
+  SECP_CONFIG_DEFINES="$SECP_CONFIG_DEFINES -DCOMB_BLOCKS=43 -DCOMB_TEETH=6"
   ;;
 *)
-  AC_MSG_ERROR(['ecmult gen precision not 2, 4, 8 or "auto"'])
+  AC_MSG_ERROR(['ecmult gen table size not 2, 22, 86 or "auto"'])
   ;;
 esac
 
@@ -557,6 +577,7 @@ fi
 ###
 
 if test x"$enable_experimental" = x"no"; then
+<<<<<<< HEAD
   # The order of the following tests matters. If the user enables a dependent
   # module (which automatically enables the module dependencies) we want to
   # print an error for the dependent module, not the module dependency. Hence,
@@ -588,6 +609,8 @@ if test x"$enable_experimental" = x"no"; then
   if test x"$enable_module_generator" = x"yes"; then
     AC_MSG_ERROR([NUMS generator module is experimental. Use --enable-experimental to allow.])
   fi
+=======
+>>>>>>> 4392f0f7
   if test x"$set_asm" = x"arm32"; then
     AC_MSG_ERROR([ARM32 assembly is experimental. Use --enable-experimental to allow.])
   fi
@@ -661,9 +684,15 @@ echo "  module ecdsa-adaptor    = $enable_module_ecdsa_adaptor"
 echo "  module bppp             = $enable_module_bppp"
 echo "  module schnorrsig-halfagg = $enable_module_schnorrsig_halfagg"
 echo
+<<<<<<< HEAD
 echo "  asm                       = $set_asm"
 echo "  ecmult window size        = $set_ecmult_window"
 echo "  ecmult gen prec. bits     = $set_ecmult_gen_precision"
+=======
+echo "  asm                     = $set_asm"
+echo "  ecmult window size      = $set_ecmult_window"
+echo "  ecmult gen table size   = $set_ecmult_gen_kb KiB"
+>>>>>>> 4392f0f7
 # Hide test-only options unless they're used.
 if test x"$set_widemul" != xauto; then
 echo "  wide multiplication       = $set_widemul"
